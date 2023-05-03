@@ -4,6 +4,7 @@ import {v4} from 'uuid'
 import {useRouter} from 'next/router'
 import toast from 'react-hot-toast'
 import {useMemo} from 'react'
+import Layout from '@/components/Layout'
 
 export default function RoundUp() {
   const queryClient = useQueryClient()
@@ -11,6 +12,7 @@ export default function RoundUp() {
 
   const {
     data: accountsData,
+    isLoading: accountsLoading,
   } = useQuery(
     ['accounts'],
     async () => {
@@ -29,6 +31,7 @@ export default function RoundUp() {
 
   const {
     data: transactionsData,
+    isLoading: transactionsLoading,
   } = useQuery(
     ['accounts', primaryAccount?.accountUid, primaryAccount?.defaultCategory, 'transactions'],
     async () => {
@@ -111,35 +114,47 @@ export default function RoundUp() {
   const handler = () =>
     savingsGoalMutation.mutate(savingsGoalData?.savingsGoalList?.length > 0 ? savingsGoalData?.savingsGoalList[0]?.savingsGoalUid : null)
 
+  const Loading = () => (
+    <div className='animate-pulse'>
+      <div class='h-10 w-3/4 bg-slate-700 rounded mx-auto mb-4' />
+      <div class='h-10 w-3/4 bg-slate-700 rounded mx-auto mb-4' />
+      <div class='h-10 w-1/4 bg-slate-700 rounded mx-auto mb-4' />
+      <div class='h-10 w-1/2 bg-slate-700 rounded mx-auto mb-4' />
+    </div>
+  )
+
   return (
-    <div className='text-center my-20'>
-      <div className='flex-col my-4'>
-        <div className='text-4xl font-bold text-white mb-2'>
-          Weekly Round Up
-        </div>
-        <p className='text-xl text-white'>
-          The amount shown below is the rounded up value for all of your spending over the last 7 days.
-        </p>
-        <p className='text-xl text-white'>
-          Click the button below to add this to your weekly savings goal.
-        </p>
-      </div>
-      <div className='text-4xl font-bold text-white  mb-4'>£{parseFloat((roundUp / 100).toFixed(2))}</div>
-      <Button
-        disabled={savingsGoalLoading}
-        loading={savingsGoalMutation?.isLoading}
-        onClick={handler}>
-      Add To Your Savings Goal
-      </Button>
+    <Layout>
       {
-        savingsGoalData?.savingsGoalList?.length > 0
-          ? (
-            <div className='text-xl text-white my-10'>
-              {`You have saved £${parseFloat(savingsGoalData?.savingsGoalList[0]?.totalSaved?.minorUnits / 100).toFixed(2)}`}
+        accountsLoading || transactionsLoading || savingsGoalLoading
+          ? <Loading />
+          : (
+            <div>
+              <p className='text-xl text-white'>
+          The amount shown below is the rounded up value for all of your spending over the last 7 days.
+              </p>
+              <p className='text-xl text-white'>
+          Click the button below to add this to your weekly savings goal.
+              </p>
+              <div className='text-4xl font-bold text-white my-4'>£{parseFloat((roundUp / 100).toFixed(2))}</div>
+              <Button
+                disabled={savingsGoalLoading}
+                loading={savingsGoalMutation?.isLoading}
+                onClick={handler}>
+                    Add To Your Savings Goal
+              </Button>
+              {
+                savingsGoalData?.savingsGoalList?.length > 0
+                  ? (
+                    <div className='text-xl text-white my-10'>
+                      {`You have saved £${parseFloat(savingsGoalData?.savingsGoalList[0]?.totalSaved?.minorUnits / 100).toFixed(2)}`}
+                    </div>
+                  )
+                  : null
+              }
             </div>
           )
-          : null
       }
-    </div>
+    </Layout>
   )
 }

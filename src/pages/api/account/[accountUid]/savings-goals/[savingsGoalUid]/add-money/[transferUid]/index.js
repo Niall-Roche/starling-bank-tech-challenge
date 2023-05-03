@@ -1,27 +1,30 @@
 import cookie from 'cookie'
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.status(405).send({message: 'Only GET requests allowed'})
+  if (!['PUT'].includes(req.method)) {
+    res.status(405).send({message: 'Only [PUT] requests allowed'})
     return
   }
 
-  const {changesSince} = req?.query
-  const date = changesSince || new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-  date.setHours(0, 0, 0, 0)
   const cookies = cookie.parse(req.headers.cookie || '')
 
   // Get the visitor name set in the cookie
   const token = cookies['auth-token']
+  const url = `${process.env.PUBLIC_API_URL}/${process.env.PUBLIC_API_VERSION}${req.url.replace('/api', '')}`
+
   const resp = await fetch(
-    `${process.env.PUBLIC_API_URL}/${process.env.PUBLIC_API_VERSION}${req.url.replace('/api', '')}?changesSince=${date.toISOString()}`,
+    url,
     {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(req.body),
     }
   )
+
 
   const data = await resp?.json()
 

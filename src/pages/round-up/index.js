@@ -6,16 +6,27 @@ import useTransactions from '@/hooks/useTransactions'
 import useSavingsGoals from '@/hooks/useSavingsGoals'
 
 export default function RoundUp() {
+  /*
+    Fetch the customer's primary account.
+    For this challenge I assume the customer has one primary account.
+   */
   const {
     primaryAccount,
     isLoading: accountsLoading,
   } = usePrimaryAccount()
 
+  /*
+    Fetch the customer's transactions over the last 7 days for the primary account.
+   */
   const {
     transactionsData,
     isLoading: transactionsLoading,
   } = useTransactions(primaryAccount)
 
+  /*
+    Fetch the customer's savings goal.
+    The first savings goal in the list is used if it exists.
+   */
   const {
     savingsGoalData,
     isLoading: savingsGoalLoading,
@@ -25,11 +36,14 @@ export default function RoundUp() {
   const roundUp = useMemo(() => {
     const transactions = transactionsData?.feedItems
     return transactions
+      // We only want paid out transactions that aren't savings
       ?.filter(item => item?.direction === 'OUT' && item?.spendingCategory !== 'SAVING')
+      // Get the difference to the next pound e.g. 1.25 would be .75
       ?.map(item => {
         const amount = item?.amount?.minorUnits / 100
         return Math.round((Math.ceil(amount) - amount) * 100)
       })
+      // Get the accumulated round up value
       ?.reduce((a, b) => a + b, 0)
   }, [transactionsData?.feedItems])
 

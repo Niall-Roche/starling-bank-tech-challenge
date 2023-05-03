@@ -11,6 +11,7 @@ export default async function handler(req, res) {
   date.setHours(0, 0, 0, 0)
   const cookies = cookie.parse(req.headers.cookie || '')
 
+  // get the auth-token
   const token = cookies['auth-token']
   const resp = await fetch(
     `${process.env.PUBLIC_API_URL}/${process.env.PUBLIC_API_VERSION}${req.url.replace('/api', '')}?changesSince=${date.toISOString()}`,

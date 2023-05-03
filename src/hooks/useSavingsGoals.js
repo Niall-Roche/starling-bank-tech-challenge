@@ -20,6 +20,10 @@ const useSavingsGoals = primaryAccount => {
   const savingsGoalMutation = useMutation(
     async ({id, minorUnits}) => {
       let savingsGoalUid = id
+      /*
+       Need to check if we already have a savings goal created.
+       If not we create one.
+       */
       if (!id) {
         const goalResp = await fetch(
           `api/account/${primaryAccount?.accountUid}/savings-goals`, {
@@ -38,6 +42,9 @@ const useSavingsGoals = primaryAccount => {
         savingsGoalUid = data?.savingsGoalUid
       }
 
+      /*
+       Add the round up value to the savings goal
+       */
       const addMoneyResp = await fetch(
         `api/account/${primaryAccount?.accountUid}/savings-goals/${savingsGoalUid}/add-money/${v4()}`,
         {

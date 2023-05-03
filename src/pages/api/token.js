@@ -6,6 +6,7 @@ export default function handler(req, res) {
     return
   }
 
+  // set the auth-token cookie with the token that was passed in the request body
   const cookie = serialize('auth-token', req?.body?.token, {
     httpOnly: true,
     path: '/',

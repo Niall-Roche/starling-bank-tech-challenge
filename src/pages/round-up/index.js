@@ -1,59 +1,26 @@
 import Button from '@/components/Button'
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
-import {v4} from 'uuid'
-import {useRouter} from 'next/router'
-import toast from 'react-hot-toast'
 import {useMemo} from 'react'
 import Layout from '@/components/Layout'
+import usePrimaryAccount from '@/hooks/usePrimaryAccount'
+import useTransactions from '@/hooks/useTransactions'
+import useSavingsGoals from '@/hooks/useSavingsGoals'
 
 export default function RoundUp() {
-  const queryClient = useQueryClient()
-  const {push} = useRouter()
-
   const {
-    data: accountsData,
+    primaryAccount,
     isLoading: accountsLoading,
-  } = useQuery(
-    ['accounts'],
-    async () => {
-      const resp = await fetch( '/api/accounts', {headers: {'Accept': 'application/json'}})
-      const data = await resp?.json()
-
-      if (resp?.status !== 200) return await Promise.reject(data)
-      return data
-    },
-    {
-      retry: 1,
-      onError: e => e?.error === 'invalid_token' ? push('/') : toast.error(e?.error_description),
-    }
-  )
-  const primaryAccount = accountsData?.accounts?.find(acc => acc?.accountType === 'PRIMARY')
+  } = usePrimaryAccount()
 
   const {
-    data: transactionsData,
+    transactionsData,
     isLoading: transactionsLoading,
-  } = useQuery(
-    ['accounts', primaryAccount?.accountUid, primaryAccount?.defaultCategory, 'transactions'],
-    async () => {
-      const resp = await fetch(`/api/feed/account/${primaryAccount?.accountUid}/category/${primaryAccount?.defaultCategory}`, {
-        headers: {'Accept': 'application/json'},
-      })
-      return await resp?.json()
-    },
-    {enabled: !!primaryAccount?.accountUid && !!primaryAccount?.defaultCategory}
-  )
+  } = useTransactions(primaryAccount)
 
   const {
-    data: savingsGoalData,
+    savingsGoalData,
     isLoading: savingsGoalLoading,
-  } = useQuery(
-    ['accounts', primaryAccount?.accountUid, 'savings-goals'],
-    async () => {
-      const resp = await fetch(`/api/account/${primaryAccount?.accountUid}/savings-goals`, {
-        headers: {'Accept': 'application/json'},
-      })
-      return await resp?.json()
-    }, {enabled: !!primaryAccount?.accountUid})
+    savingsGoalMutation,
+  } = useSavingsGoals(primaryAccount)
 
   const roundUp = useMemo(() => {
     const transactions = transactionsData?.feedItems
@@ -66,53 +33,11 @@ export default function RoundUp() {
       ?.reduce((a, b) => a + b, 0)
   }, [transactionsData?.feedItems])
 
-  const savingsGoalMutation = useMutation(
-    async id => {
-      let savingsGoalUid = id
-      if (!id) {
-        const goalResp = await fetch(
-          `api/account/${primaryAccount?.accountUid}/savings-goals`, {
-            method: 'PUT',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: 'Weekly Round Up',
-              currency: primaryAccount?.currency,
-            }),
-          })
-
-        const data = await goalResp?.json()
-        savingsGoalUid = data?.savingsGoalUid
-      }
-
-      const addMoneyResp = await fetch(
-        `api/account/${primaryAccount?.accountUid}/savings-goals/${savingsGoalUid}/add-money/${v4()}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: {
-              currency: primaryAccount?.currency,
-              minorUnits: roundUp,
-            },
-          }),
-        })
-
-      return await addMoneyResp?.json()
-    },
-    {onSuccess: () => {
-      queryClient.invalidateQueries(['accounts'])
-        .then(() => toast.success('Nice! You have successfully added to your savings goal!'))
-    }}
-  )
-
   const handler = () =>
-    savingsGoalMutation.mutate(savingsGoalData?.savingsGoalList?.length > 0 ? savingsGoalData?.savingsGoalList[0]?.savingsGoalUid : null)
+    savingsGoalMutation.mutate({
+      minorUnits: roundUp,
+      id: savingsGoalData?.savingsGoalList?.length > 0 ? savingsGoalData?.savingsGoalList[0]?.savingsGoalUid : null,
+    })
 
   const Loading = () => (
     <div className='animate-pulse'>

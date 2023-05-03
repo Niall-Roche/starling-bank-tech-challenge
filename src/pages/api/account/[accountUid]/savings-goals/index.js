@@ -8,7 +8,6 @@ export default async function handler(req, res) {
 
   const cookies = cookie.parse(req.headers.cookie || '')
 
-  // Get the visitor name set in the cookie
   const token = cookies['auth-token']
   const url = `${process.env.PUBLIC_API_URL}/${process.env.PUBLIC_API_VERSION}${req.url.replace('/api', '')}`
 

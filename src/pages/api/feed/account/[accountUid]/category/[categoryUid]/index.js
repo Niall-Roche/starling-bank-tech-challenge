@@ -11,7 +11,6 @@ export default async function handler(req, res) {
   date.setHours(0, 0, 0, 0)
   const cookies = cookie.parse(req.headers.cookie || '')
 
-  // Get the visitor name set in the cookie
   const token = cookies['auth-token']
   const resp = await fetch(
     `${process.env.PUBLIC_API_URL}/${process.env.PUBLIC_API_VERSION}${req.url.replace('/api', '')}?changesSince=${date.toISOString()}`,

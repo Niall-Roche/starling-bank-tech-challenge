@@ -56,10 +56,10 @@ export default function RoundUp() {
           : (
             <div>
               <p className='text-xl text-white'>
-          The amount shown below is the rounded up value for all of your spending over the last 7 days.
+                The amount shown below is the rounded up value for all of your spending over the last 7 days.
               </p>
               <p className='text-xl text-white'>
-          Click the button below to add this to your weekly savings goal.
+                Click the button below to add this to your weekly savings goal.
               </p>
               <div className='text-4xl font-bold text-white my-4'>£{parseFloat((roundUp / 100).toFixed(2))}</div>
               <Button
